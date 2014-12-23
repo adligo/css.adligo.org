@@ -36,4 +36,7 @@ public interface I_SequenceOfSimpleSelectors {
    */
   public abstract String getPseudoElement();
 
+  public int hashCode();
+  
+  public boolean equals(Object other);
 }

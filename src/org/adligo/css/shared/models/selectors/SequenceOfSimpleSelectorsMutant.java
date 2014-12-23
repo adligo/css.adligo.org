@@ -1,6 +1,7 @@
 package org.adligo.css.shared.models.selectors;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class SequenceOfSimpleSelectorsMutant implements I_SequenceOfSimpleSelect
     List<String> ids = selector.getIds();
     if (ids != null) {
       for (String id: ids) {
-        result = prime * result + ids.hashCode();
+        result = prime * result + id.hashCode();
       }
     }
     List<CssPseudoClass<?>> pseudoClasses = selector.getPseudoClasses();
@@ -81,16 +82,20 @@ public class SequenceOfSimpleSelectorsMutant implements I_SequenceOfSimpleSelect
       return false;
     try {
       I_SequenceOfSimpleSelectors other = (I_SequenceOfSimpleSelectors) obj;
-      if (me.getAttributes() == null) {
-        if (other.getAttributes() != null)
-          return false;
+      List<CssAttribute> attributes = me.getAttributes();
+      List<CssAttribute> otherAttributes = other.getAttributes(); 
+      if (attributes == null) {
+        if (otherAttributes != null) {
+          if (otherAttributes.size() != 0) {
+            return false;
+          }
+        }
       } else {
-       List<CssAttribute> attributes = me.getAttributes();
-       List<CssAttribute> otherAttributes = me.getAttributes();   
        if (otherAttributes == null) {
-         return false;
-       }
-       if (attributes.size() != otherAttributes.size()) {
+         if (attributes.size() == 0) {
+           return false;
+         }
+       } else if (attributes.size() != otherAttributes.size()) {
          return false;
        } else {
          int index = 0;
@@ -102,13 +107,18 @@ public class SequenceOfSimpleSelectorsMutant implements I_SequenceOfSimpleSelect
        }
       }
       List<String> classNames = me.getClassNames();
-      List<String> otherClassNames = me.getClassNames();
+      List<String> otherClassNames = other.getClassNames();
       if (classNames == null) {
-        if (otherClassNames != null)
-          return false;
+        if (otherClassNames != null) {
+          if (otherClassNames.size() != 0) {
+            return false;
+          }
+        }
       } else {
         if (otherClassNames == null) {
-          return false;
+          if (classNames.size() != 0) {
+            return false;
+          }
         }
         if (classNames.size() != otherClassNames.size()) {
           return false;
@@ -124,17 +134,25 @@ public class SequenceOfSimpleSelectorsMutant implements I_SequenceOfSimpleSelect
       NamespaceAndElement namespaceAndElement = me.getNamespaceAndElement();
       NamespaceAndElement otherElementName = other.getNamespaceAndElement();
       if (namespaceAndElement == null) {
-        if (otherElementName != null)
+        if (otherElementName != null) {
           return false;
+        }
       } else if (!namespaceAndElement.equals(otherElementName))
         return false;
       List<String> ids = me.getIds();
       List<String> otherIds = other.getIds();
       if (ids == null) {
-        if (otherIds != null)
-          return false;
+        if (otherIds != null) {
+          if (otherIds.size() != 0) {
+            return false;
+          }
+        }
       } else {
-        if (ids.size() != otherIds.size()) {
+        if (otherIds == null) {
+          if (ids.size() != 0) {
+            return false;
+          }
+        } else if (ids.size() != otherIds.size()) {
           return false;
         } else {
           int index = 0;
@@ -146,12 +164,19 @@ public class SequenceOfSimpleSelectorsMutant implements I_SequenceOfSimpleSelect
         }
       }
       List<CssPseudoClass<?>> pseudoClasses = me.getPseudoClasses();
-      List<CssPseudoClass<?>> otherPseudoClasses = me.getPseudoClasses();
+      List<CssPseudoClass<?>> otherPseudoClasses = other.getPseudoClasses();
       if (pseudoClasses == null) {
-        if (otherPseudoClasses != null)
-          return false;
+        if (otherPseudoClasses != null) {
+          if (otherPseudoClasses.size() != 0) {
+            return false;
+          }
+        }
       } else {
-        if (pseudoClasses.size() != otherPseudoClasses.size()) {
+        if (otherPseudoClasses == null) {
+          if (pseudoClasses.size() != 0) {
+            return false;
+          }
+        } else if (pseudoClasses.size() != otherPseudoClasses.size()) {
           return false;
         } else {
           int index = 0;
@@ -264,7 +289,7 @@ public class SequenceOfSimpleSelectorsMutant implements I_SequenceOfSimpleSelect
     pseudoClasses_.add(pc);
   }
   
-  public void setClassNames(List<String> classNames) {
+  public void setClassNames(Collection<String> classNames) {
     bankClassNames();
     classNames_.clear();
     if (classNames != null) {

@@ -35,4 +35,5 @@ public enum Combinator {
    * section 8.3.2
    */
   GENERAL_SIBLING
+  
 }

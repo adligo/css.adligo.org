@@ -12,14 +12,14 @@ public class CssLink {
   private Combinator combinator_;
   private I_SequenceOfSimpleSelectors sequence_;
   
-  public CssLink(I_SequenceOfSimpleSelectors selector) {
+  public CssLink(I_SequenceOfSimpleSelectors sequence) {
     combinator_ = Combinator.NONE;
-    sequence_ = selector;
+    sequence_ = new SequenceOfSimpleSelectors(sequence);
   }
 
-  public CssLink(Combinator combinator, I_SequenceOfSimpleSelectors selector) {
+  public CssLink(Combinator combinator, I_SequenceOfSimpleSelectors sequence) {
     combinator_ = combinator;
-    sequence_ = selector;
+    sequence_ = new SequenceOfSimpleSelectors(sequence);
   }
   
   public Combinator getCombinator() {
@@ -28,5 +28,33 @@ public class CssLink {
 
   public I_SequenceOfSimpleSelectors getSequence() {
     return sequence_;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((combinator_ == null) ? 0 : combinator_.hashCode());
+    result = prime * result + ((sequence_ == null) ? 0 : sequence_.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    CssLink other = (CssLink) obj;
+    if (combinator_ != other.combinator_)
+      return false;
+    if (sequence_ == null) {
+      if (other.sequence_ != null)
+        return false;
+    } else if (!sequence_.equals(other.sequence_))
+      return false;
+    return true;
   }
 }

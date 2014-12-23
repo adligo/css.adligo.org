@@ -43,4 +43,9 @@ public class SpecifiedValue <T>  {
   public String getContent() {
     return content_;
   }
+
+  @Override
+  public String toString() {
+    return "SpecifiedValue [type_=" + type_ + ", content_=" + content_ + "]";
+  }
 }

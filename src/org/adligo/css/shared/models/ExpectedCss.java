@@ -2,6 +2,7 @@ package org.adligo.css.shared.models;
 
 import org.adligo.css.shared.models.selectors.Selector;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,13 +22,13 @@ public class ExpectedCss implements I_ExpectedCss {
   }
 
   @Override
-  public Set<Selector> getChoiceGroups() {
+  public Set<Selector> getSelectors() {
     return map_.keySet();
   }
 
   @Override
-  public Set<String> getProperties(Selector choiceGroup) {
-    return ExpectedCssMutant.getProperties(map_, choiceGroup);
+  public Map<String,CssType> getProperties(Collection<Selector> selectors) {
+    return ExpectedCssMutant.getProperties(map_, selectors);
   }
 
   @Override

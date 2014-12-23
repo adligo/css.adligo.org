@@ -2,7 +2,7 @@ package org.adligo.css.shared.models;
 
 import org.adligo.css.shared.models.selectors.Selector;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -21,17 +21,20 @@ import java.util.Set;
  */
 public class ExpectedCssMutant implements I_ExpectedCss {
   public static final String EXPECTED_CSS_MUTANT_REQUIRES_A = "ExpectedCssMutant requires a ";
-  public static final String EXPECTED_CSS_MUTANT_REQUIRES_A_CHOICE_GROUP = EXPECTED_CSS_MUTANT_REQUIRES_A + "choice group.";
+  public static final String EXPECTED_CSS_MUTANT_REQUIRES_A_SELECTOR= EXPECTED_CSS_MUTANT_REQUIRES_A + "selector.";
   public static final String EXPECTED_CSS_MUTANT_REQUIRES_A_PROPERTY = EXPECTED_CSS_MUTANT_REQUIRES_A + "property.";
   public static final String EXPECTED_CSS_MUTANT_REQUIRES_A_TYPE = EXPECTED_CSS_MUTANT_REQUIRES_A + "type.";
   private Map<Selector,Map<String,CssType>> map_ = new HashMap<Selector,Map<String,CssType>>();
   
-  public static Set<String> getProperties(Map<Selector,Map<String,CssType>> map, Selector choiceGroup) {
-    Map<String,CssType> properties = map.get(choiceGroup);
-    if (properties != null) {
-      return properties.keySet();
+  public static Map<String,CssType> getProperties(Map<Selector,Map<String,CssType>> map, Collection<Selector> selectors) {
+    Map<String,CssType> toRet = new HashMap<String,CssType>();
+    for (Selector selector: selectors) {
+      Map<String,CssType> sub = map.get(selector);
+      if (sub != null) {
+        toRet.putAll(sub);
+      }
     }
-    return Collections.emptySet();
+    return toRet;
   }
   
   public static CssType getType(Map<Selector,Map<String,CssType>> map, Selector choiceGroup, String property) {
@@ -42,6 +45,11 @@ public class ExpectedCssMutant implements I_ExpectedCss {
     return null;
   }
   
+  public ExpectedCssMutant() {}
+  
+  public  ExpectedCssMutant(Selector selector, String property, CssType value) {
+    addExpected(selector, property, value);
+  }
   /**
    * Note the term selector and property come from the css 2.1 wc3 
    * candidate recomendation
@@ -51,9 +59,9 @@ public class ExpectedCssMutant implements I_ExpectedCss {
    * @param property
    * @param type
    */
-  public void addExpected(Selector choiceGroup, String property, CssType type) {
-    if (choiceGroup == null) {
-      throw new IllegalArgumentException(EXPECTED_CSS_MUTANT_REQUIRES_A_CHOICE_GROUP);
+  public void addExpected(Selector selector, String property, CssType type) {
+    if (selector == null) {
+      throw new IllegalArgumentException(EXPECTED_CSS_MUTANT_REQUIRES_A_SELECTOR);
     }
     if (property == null) {
       throw new IllegalArgumentException(EXPECTED_CSS_MUTANT_REQUIRES_A_PROPERTY);
@@ -61,10 +69,10 @@ public class ExpectedCssMutant implements I_ExpectedCss {
     if (type == null) {
       throw new IllegalArgumentException(EXPECTED_CSS_MUTANT_REQUIRES_A_TYPE);
     }
-    Map<String,CssType> properties = map_.get(choiceGroup);
+    Map<String,CssType> properties = map_.get(selector);
     if (properties == null) {
       properties = new HashMap<String,CssType>();
-      map_.put(choiceGroup, properties);
+      map_.put(selector, properties);
     }
     properties.put(property, type);
   }
@@ -73,7 +81,7 @@ public class ExpectedCssMutant implements I_ExpectedCss {
    * @see org.adligo.gwt_css.client.I_ExpectedCss#getSelectors()
    */
   @Override
-  public Set<Selector> getChoiceGroups() {
+  public Set<Selector> getSelectors() {
     return map_.keySet();
   }
   
@@ -81,8 +89,8 @@ public class ExpectedCssMutant implements I_ExpectedCss {
    * @see org.adligo.gwt_css.client.I_ExpectedCss#getProperties(java.lang.String)
    */
   @Override
-  public Set<String> getProperties(Selector selector) {
-    return getProperties(map_,selector);
+  public Map<String,CssType> getProperties(Collection<Selector> selectors) {
+    return getProperties(map_, selectors);
   }
 
   

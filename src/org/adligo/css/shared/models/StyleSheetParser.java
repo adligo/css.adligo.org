@@ -12,7 +12,7 @@ import org.adligo.css.shared.models.selectors.Selector;
 import org.adligo.css.shared.models.selectors.SequenceOfSimpleSelectors;
 import org.adligo.css.shared.models.selectors.SequenceOfSimpleSelectorsParser;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -55,7 +55,7 @@ public class StyleSheetParser {
    * note this hasn't been implemented yet for at rule blocks,
    * only for selector blocks.
    */
-  private Map<String,SpecifiedValue<?>> expectedCurrentBlock_;
+  private Map<String,CssType> expectedCurrentBlock_;
   
   private StringBuilder sb_ = new StringBuilder();
   private ParseSection currentTopSection_;
@@ -63,8 +63,10 @@ public class StyleSheetParser {
   
   private BackslashEscape backslashEscape_ = null;
   private String currentAtRule_ = null;
+  private SequenceOfSimpleSelectors currentSequenceOfSimpleSelectors_ = null;
+  private Combinator currentCombinator_ = null;
   private Set<Selector> currentSelectors_ = null;
-  private Combinator lastCombinator_ = null;
+  private List<CssLink> currentSelectorLinks_ = null;
   
   private StyleSheetMutant styleSheet_;
   private String currentPropertyName_ = null;
@@ -121,7 +123,6 @@ public class StyleSheetParser {
     
     sb_ = new StringBuilder();
     currentAtRule_ = null;
-    currentSelectors_ = Collections.emptySet();
     styleSheet_ = new StyleSheetMutant();
     
     char [] chars = content.toCharArray();
@@ -172,6 +173,7 @@ public class StyleSheetParser {
             switch (currentSection) {
               case SELECTOR_OR_BLOCK:
                 setStacks(ParseSection.SELECTOR_GROUP);
+                currentSection = ParseSection.SELECTOR_GROUP;
                 //note no break
               case SELECTOR_GROUP:
                 processSelectorGroup(c,currentSection);
@@ -194,6 +196,7 @@ public class StyleSheetParser {
         }
       }
     }
+    String soFar = sb_.toString();
     //try to identify the section;
     if (c == AT_CHAR) {
       sb_ = new StringBuilder();
@@ -208,15 +211,15 @@ public class StyleSheetParser {
     } else if (c == COMMENT_SGML_START.charAt(0)) {
       sb_ = new StringBuilder();
       sb_.append(c);
-    } else if (COMMENT_START.indexOf(sb_.toString()) == 0) {
+    } else if (soFar.length() >= 1 && COMMENT_START.indexOf(soFar) == 0) {
       sb_.append(c);
-      if (COMMENT_START.equals(sb_.toString())) {
+      if (COMMENT_START.equals(soFar)) {
         sb_ = new StringBuilder();
         currentTopSection_ = ParseSection.COMMENT;
         sections_.push(ParseSection.COMMENT);
         sectionStarts_.push(new LineChar(lineNumber_, characterNumber_ - sb_.toString().length()));
       }
-    } else if (COMMENT_SGML_START.indexOf(sb_.toString()) == 0) {
+    } else if (soFar.length() >= 1 && COMMENT_SGML_START.indexOf(soFar) == 0) {
       sb_.append(c);
       if (COMMENT_SGML_START.equals(sb_.toString())) {
         sb_ = new StringBuilder();
@@ -235,6 +238,7 @@ public class StyleSheetParser {
         sections_.push(ParseSection.SELECTOR_OR_BLOCK);
         sectionStarts_.push(currentTopSectionStart_);
         sb_.append(c);
+        currentSelectorLinks_ = new ArrayList<CssLink>();
         currentSelectors_ = new HashSet<Selector>();
       }
     }
@@ -290,11 +294,12 @@ public class StyleSheetParser {
     if (!inPropertyValue_) {
       switch (currentSection) {
         case BLOCK:
+          inPropertyValue_ = false;
           //ok the block just started, or a declaration and property just ended
           if (Character.isWhitespace(c)) {
             return;
           } else if (c == ':') {
-            if (currentIdentifier_ == null) {
+            if (currentIdentifier_ != null) {
               currentPropertyName_ = currentIdentifier_.getId();
             } else {
               //I don't see what to do with empty declartion name, 
@@ -306,8 +311,9 @@ public class StyleSheetParser {
             //back to top elements :)_
             popStacks(sections_.size());
           } else {
+            
             currentIdentifier_ = new CssIdentifier();
-            if (!currentIdentifier_.append(c)) {
+            if (currentIdentifier_.append(c)) {
               setStacks(ParseSection.PROPERTY_NAME);
             }
           }
@@ -380,6 +386,8 @@ public class StyleSheetParser {
             }
             //done with selectors section
             popStacks(sections_.size());
+          } else {
+            sb_.append(c);
           }
       }
     }
@@ -440,9 +448,8 @@ public class StyleSheetParser {
   private void processEndOfPropertyValue() {
     String value = sb_.toString();
     if (expectedCurrentBlock_ != null) {
-      SpecifiedValue<?> ev = expectedCurrentBlock_.get(currentPropertyName_);
-      if (ev != null) {
-        CssType type = ev.getType();
+      CssType type = expectedCurrentBlock_.get(currentPropertyName_);
+      if (type != null) {
         switch (type) {
           case PX:
             processPxValue(value);
@@ -475,11 +482,11 @@ public class StyleSheetParser {
       if ("p".equalsIgnoreCase("" + vc) || "x".equalsIgnoreCase("" + vc)) {
         //don't add it
       } else {
-        sb_.append(vc);
+        sb.append(vc);
       }
     }
-    
-    currentBlock_.put(currentPropertyName_, new SpecifiedValue<String>(CssType.ANY, value));
+    value = sb.toString().trim();
+    currentBlock_.put(currentPropertyName_, new SpecifiedValue<Integer>(CssType.INTEGER, new Integer(value)));
   }
   
   private void processDoubleValue(String value) {
@@ -490,11 +497,11 @@ public class StyleSheetParser {
       if ("p".equalsIgnoreCase("" + vc) || "x".equalsIgnoreCase("" + vc)) {
         //don't add it
       } else {
-        sb_.append(vc);
+        sb.append(vc);
       }
     }
-    
-    currentBlock_.put(currentPropertyName_, new SpecifiedValue<String>(CssType.ANY, value));
+    value = sb.toString().trim();
+    currentBlock_.put(currentPropertyName_, new SpecifiedValue<Double>(CssType.DOUBLE, new Double(value)));
   }
   
   private void processPctValue(String value) {
@@ -505,11 +512,11 @@ public class StyleSheetParser {
       if ("p".equalsIgnoreCase("" + vc) || "x".equalsIgnoreCase("" + vc)) {
         //don't add it
       } else {
-        sb_.append(vc);
+        sb.append(vc);
       }
     }
-    
-    currentBlock_.put(currentPropertyName_, new SpecifiedValue<String>(CssType.ANY, value));
+    value = sb.toString().trim();
+    currentBlock_.put(currentPropertyName_, new SpecifiedValue<Double>(CssType.PCT, new Double(value)));
   }
   
   private void processPxValue(String value) {
@@ -520,11 +527,11 @@ public class StyleSheetParser {
       if ("p".equalsIgnoreCase("" + vc) || "x".equalsIgnoreCase("" + vc)) {
         //don't add it
       } else {
-        sb_.append(vc);
+        sb.append(vc);
       }
     }
-    
-    currentBlock_.put(currentPropertyName_, new SpecifiedValue<String>(CssType.ANY, value));
+    value = sb.toString().trim();
+    currentBlock_.put(currentPropertyName_, new SpecifiedValue<Integer>(CssType.PX, new Integer(value)));
   }
   
   private void appendWarning() {
@@ -587,57 +594,72 @@ public class StyleSheetParser {
           processQuote(c, '\'');
           break;
         case SELECTOR_GROUP:
-          
-          if (c == '[') {
+
+          if (c == ',') {
+            parseSequenceOfSimpleSelectors(); 
+            addLinkAndSelector(Combinator.NONE);
+          } else if (c == '{') {
+            parseSequenceOfSimpleSelectors(); 
+            addLinkAndSelector(Combinator.NONE);
+            setStacks(ParseSection.BLOCK);
+            currentBlock_ = new HashMap<String,SpecifiedValue<?>>();
+            if (expectedCss_ != null) {
+              expectedCurrentBlock_ = expectedCss_.getProperties(currentSelectors_);
+            }
+          } else if (c == '[') {
             setStacks(ParseSection.BRACKET);
           } else if (c == '(') {
             setStacks(ParseSection.PARENTHESES);
-          } else if (c == '{') {
-            setStacks(ParseSection.BLOCK);
-          } else if (c == '"') {
             inString_ = true;
             setStacks(ParseSection.DOUBLE_QUOTE);
           } else if (c == '\'') {
             inString_ = true;
             setStacks(ParseSection.SINGLE_QUOTE);
           } else if (Character.isWhitespace(c)) {
-            if (lastCombinator_ == null) {
-              lastCombinator_ = Combinator.DIRECT_DESCENDANT;
+            if (currentCombinator_ == null) {
+              currentCombinator_ = Combinator.DIRECT_DESCENDANT;
             }
           } else if (c == '*') {
-            lastCombinator_ = Combinator.ANY_DESCENDANT;
+            currentCombinator_ = Combinator.ANY_DESCENDANT;
           } else if (c == '>') {
-            lastCombinator_ = Combinator.CHILD;
+            currentCombinator_ = Combinator.CHILD;
           } else if (c == '+') {
-            lastCombinator_ = Combinator.ADJACENT_SIBLING;
+            currentCombinator_ = Combinator.ADJACENT_SIBLING;
           } else if (c == '~') {
-            lastCombinator_ = Combinator.GENERAL_SIBLING;
-          } else if (c == ',') {
-            processSelector();
-          } else if (c == '}') {
-            //end of block;
-            processSelector();
-            //done with selectors section
-            popStacks(1);
-            setStacks(ParseSection.BLOCK);
+            currentCombinator_ = Combinator.GENERAL_SIBLING;
           } else {
+            if (currentCombinator_ != null) {
+              parseSequenceOfSimpleSelectors(); 
+              addLinkAndSelector(currentCombinator_);
+              currentCombinator_ = null;
+            }
             sb_.append(c);
           }
       }
     }
   }
 
-  private void processSelector() {
-    String selectorString = sb_.toString();
-    SequenceOfSimpleSelectors sel = sequenceOfSimpleSelectorsParser_.parse(selectorString);
-    if (lastCombinator_ == null) {
-      lastCombinator_ = Combinator.NONE;
-    }
-    currentSelectors_.add(new Selector(new CssLink(lastCombinator_, sel)));
-    sb_ = new StringBuilder();
-    lastCombinator_ = null;
+  private void addLinkAndSelector(Combinator combinator) {
+    addLink(combinator);
+    addSelector();
+  }
+  
+  private void addLink(Combinator combinator) {
+    currentSelectorLinks_.add(new CssLink(combinator, currentSequenceOfSimpleSelectors_));
+    currentSequenceOfSimpleSelectors_ = null;
   }
 
+  private void parseSequenceOfSimpleSelectors() {
+    String seqOfSimpleSelectors = sb_.toString(); 
+    sb_ = new StringBuilder();
+    currentSequenceOfSimpleSelectors_ = sequenceOfSimpleSelectorsParser_.parse(seqOfSimpleSelectors);
+  }
+
+  private void addSelector() {
+    Selector selector = new Selector(currentSelectorLinks_);
+    currentSelectors_.add(selector);
+    currentSelectorLinks_.clear();
+  }
 
 
   private void processComment(char c, String commentEnd) {

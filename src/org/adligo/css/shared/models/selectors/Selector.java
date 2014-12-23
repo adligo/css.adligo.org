@@ -54,4 +54,34 @@ public class Selector {
   public CssLink get(int i) {
     return chain_.get(i);
   }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    for (CssLink link: chain_) {
+      result = prime * result +  link.hashCode();
+    }
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Selector other = (Selector) obj;
+    
+    int counter = 0;
+    for (CssLink link: chain_) {
+      CssLink ol = other.get(counter++);
+      if (!link.equals(ol)) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

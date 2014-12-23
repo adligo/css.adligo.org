@@ -8,7 +8,8 @@ package org.adligo.css.shared.models.common;
  *
  */
 public class CssI18nConstants implements I_CssI18nConstants {
-
+  public static final CssI18nConstants INSTANCE = new CssI18nConstants();
+  
   @Override
   public String getParsingErrorInvalidSection() {
     // TODO Auto-generated method stub

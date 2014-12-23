@@ -80,6 +80,7 @@ public class SequenceOfSimpleSelectors implements I_SequenceOfSimpleSelectors {
     if (className != null) {
       classNames_ = Collections.singletonList(className);
     }
+    namespaceAndElement_ = new NamespaceAndElement(new CssNamespace(CssNamespaceType.ANY));
   }
   
   /**
