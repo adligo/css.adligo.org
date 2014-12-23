@@ -42,26 +42,38 @@ public class StyleSheet implements I_StyleSheet {
    * @see org.adligo.gwt_css.client.models.I_StyleSheet#getValue(java.lang.String, java.lang.String)
    */
   @Override
-  public String getValue(Selector selector, String property) {
-    return StyleSheetMutant.getValue(map_, selector, property);
+  public String getValue(Selector selector, String property, String def) {
+    return StyleSheetMutant.getValue(map_, selector, property, def);
   }
-  
+  @Override
+  public String getValue(Selector selector, String property) {
+    return StyleSheetMutant.getValue(map_, selector, property, null);
+  }
   /* (non-Javadoc)
    * @see org.adligo.gwt_css.client.models.I_StyleSheet#getInteger(java.lang.String, java.lang.String)
    */
   @Override
+  public Integer getInteger(Selector selector, String property, Integer def) {
+    return StyleSheetMutant.getInteger(map_, selector, property, def);
+  }
+  @Override
   public Integer getInteger(Selector selector, String property) {
-    return StyleSheetMutant.getInteger(map_, selector, property);
+    return StyleSheetMutant.getInteger(map_, selector, property, null);
   }
   
   /* (non-Javadoc)
    * @see org.adligo.gwt_css.client.models.I_StyleSheet#getDouble(java.lang.String, java.lang.String)
    */
   @Override
-  public Double getDouble(Selector selector, String property) {
-    return StyleSheetMutant.getDouble(map_, selector, property);
+  public Double getDouble(Selector selector, String property, Double def) {
+    return StyleSheetMutant.getDouble(map_, selector, property, def);
   }
 
+  @Override
+  public Double getDouble(Selector selector, String property) {
+    return StyleSheetMutant.getDouble(map_, selector, property, null);
+  }
+  
   /* (non-Javadoc)
    * @see org.adligo.gwt_css.client.models.I_StyleSheet#getMap()
    */

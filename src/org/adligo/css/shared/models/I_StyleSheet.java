@@ -12,12 +12,41 @@ import java.util.Map;
  */
 public interface I_StyleSheet {
 
+  /**
+   * 
+   * @param selector
+   * @param property
+   * @param def the default value if none is found,
+   *   Note the style sheet should also print the stack trace
+   *   of a exception when the default value is used.
+   * @return
+   */
+  public abstract String getValue(Selector selector, String property, String def);
   public abstract String getValue(Selector selector, String property);
-
+  /**
+   * 
+   * @param selector
+   * @param property
+   * @param def the default value if none is found,
+   *   Note the style sheet should also print the stack trace
+   *   of a exception when the default value is used.
+   * @return
+   */
+  public abstract Integer getInteger(Selector selector, String property, Integer def);
   public abstract Integer getInteger(Selector selector, String property);
-
+  
+  /**
+   * 
+   * @param selector
+   * @param property
+   * @param def the default value if none is found,
+   *   Note the style sheet should also print the stack trace
+   *   of a exception when the default value is used.
+   * @return
+   */
+  public abstract Double getDouble(Selector selector, String property, Double def);
   public abstract Double getDouble(Selector selector, String property);
-
+  
   /**
    * the internal map contains the declaration and property from the block
    * under a selector.
