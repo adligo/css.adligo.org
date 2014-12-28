@@ -27,6 +27,16 @@ public interface I_StyleSheet {
    * 
    * @param selector
    * @param property
+   * @return if this value is available in the current style sheet,
+   *  Note this should NOT print a stack trace if the property is 
+   *  NOT available.
+   */
+  public abstract boolean hasValue(Selector selector, String property);
+  public abstract boolean hasSelector(Selector selector);
+  /**
+   * 
+   * @param selector
+   * @param property
    * @param def the default value if none is found,
    *   Note the style sheet should also print the stack trace
    *   of a exception when the default value is used.
@@ -34,7 +44,6 @@ public interface I_StyleSheet {
    */
   public abstract Integer getInteger(Selector selector, String property, Integer def);
   public abstract Integer getInteger(Selector selector, String property);
-  
   /**
    * 
    * @param selector

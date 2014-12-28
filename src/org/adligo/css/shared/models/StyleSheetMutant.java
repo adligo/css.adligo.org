@@ -31,6 +31,17 @@ public class StyleSheetMutant implements I_StyleSheet {
   private Map<String,List<I_AtRule>> atRuleMap_ = new HashMap<String,List<I_AtRule>>();
   private List<Throwable> warnings_;
   
+  public static boolean hasValue(Map<Selector,Map<String,SpecifiedValue<?>>> map, Selector selector, String property) {
+    Map<String,SpecifiedValue<?>> properties = map.get(selector);
+    if (properties != null) {
+      SpecifiedValue<?> sv =  properties.get(property);
+      if (sv != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   public static SpecifiedValue<?> getSpecifiedValue(Map<Selector,Map<String,SpecifiedValue<?>>> map, Selector selector, String property) {
     Map<String,SpecifiedValue<?>> properties = map.get(selector);
     if (properties != null) {
@@ -42,10 +53,11 @@ public class StyleSheetMutant implements I_StyleSheet {
     return null;
   }
   
+  @SuppressWarnings("unchecked")
   public static String getValue(Map<Selector,Map<String,SpecifiedValue<?>>> map, Selector selector, String property, String def) {
-    SpecifiedValue<?> value = getSpecifiedValue(map, selector, property);
+    SpecifiedValue<String> value = (SpecifiedValue<String>) getSpecifiedValue(map, selector, property);
     if (value != null) {
-      String toRet = value.getContent();
+      String toRet = value.getValue();
       if (toRet == null) {
         return def;
       }
@@ -190,5 +202,15 @@ public class StyleSheetMutant implements I_StyleSheet {
     if (warning != null) {
       warnings_.add(warning);
     }
+  }
+
+  @Override
+  public boolean hasValue(Selector selector, String property) {
+    return hasValue(map_, selector, property);
+  }
+
+  @Override
+  public boolean hasSelector(Selector selector) {
+    return map_.containsKey(selector);
   }
 }

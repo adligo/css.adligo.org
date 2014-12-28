@@ -68,7 +68,7 @@ public class BackslashEscape {
    */
   @SuppressWarnings("boxing")
   public boolean append(char c) {
-    if (Character.isWhitespace(c)) {
+    if (Whitespace.isWhitespace(c)) {
       sb_.append(c);
       return false;
     } else if (HEX_CHARS.contains(c)) {

@@ -24,7 +24,7 @@ public class CssIdentifier {
         sb_.append(c);
         return true;
       } else {
-        if (!Character.isWhitespace(c)) {
+        if (!Whitespace.isWhitespace(c)) {
           valid = false;
         }
       }

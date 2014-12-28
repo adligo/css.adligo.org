@@ -96,4 +96,14 @@ public class StyleSheet implements I_StyleSheet {
   public List<Throwable> getWarnings() {
     return warnings_;
   }
+  
+  @Override
+  public boolean hasValue(Selector selector, String property) {
+    return StyleSheetMutant.hasValue(map_, selector, property);
+  }
+  
+  @Override
+  public boolean hasSelector(Selector selector) {
+    return map_.containsKey(selector);
+  }
 }

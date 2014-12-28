@@ -46,6 +46,9 @@ public class SpecifiedValue <T>  {
 
   @Override
   public String toString() {
-    return "SpecifiedValue [type_=" + type_ + ", content_=" + content_ + "]";
+    if (content_ != null) {
+      return "SpecifiedValue [type_=" + type_ + ", content_=" + content_ + ", value=" + value_ + "]";
+    }
+    return "SpecifiedValue [type_=" + type_ + ", value_=" + value_ + "]";
   }
 }

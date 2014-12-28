@@ -6,6 +6,7 @@ import org.adligo.css.shared.models.common.I_CssI18nConstants;
 import org.adligo.css.shared.models.common.LineChar;
 import org.adligo.css.shared.models.common.ParseSection;
 import org.adligo.css.shared.models.common.SpecifiedValue;
+import org.adligo.css.shared.models.common.Whitespace;
 import org.adligo.css.shared.models.selectors.Combinator;
 import org.adligo.css.shared.models.selectors.CssLink;
 import org.adligo.css.shared.models.selectors.Selector;
@@ -191,7 +192,7 @@ public class StyleSheetParser {
     if (backslashEscape_ != null) {
       if (!backslashEscape_.append(c)) {
         sb_.append(backslashEscape_.toChar());
-        if (Character.isWhitespace(c)) {
+        if (Whitespace.isWhitespace(c)) {
           return;
         }
       }
@@ -205,7 +206,6 @@ public class StyleSheetParser {
       sections_.push(ParseSection.AT_RULE);
       sectionStarts_.push(currentTopSectionStart_);
     } else if (c == COMMENT_START.charAt(0)) {
-      
       sb_ = new StringBuilder();
       sb_.append(c);
     } else if (c == COMMENT_SGML_START.charAt(0)) {
@@ -213,21 +213,25 @@ public class StyleSheetParser {
       sb_.append(c);
     } else if (soFar.length() >= 1 && COMMENT_START.indexOf(soFar) == 0) {
       sb_.append(c);
+      soFar = sb_.toString();
       if (COMMENT_START.equals(soFar)) {
-        sb_ = new StringBuilder();
         currentTopSection_ = ParseSection.COMMENT;
+        currentTopSectionStart_ = new LineChar(lineNumber_, characterNumber_ - sb_.toString().length());
         sections_.push(ParseSection.COMMENT);
-        sectionStarts_.push(new LineChar(lineNumber_, characterNumber_ - sb_.toString().length()));
+        sectionStarts_.push(currentTopSectionStart_);
+        sb_ = new StringBuilder();
       }
     } else if (soFar.length() >= 1 && COMMENT_SGML_START.indexOf(soFar) == 0) {
       sb_.append(c);
+      soFar = sb_.toString();
       if (COMMENT_SGML_START.equals(sb_.toString())) {
-        sb_ = new StringBuilder();
         currentTopSection_ = ParseSection.COMMENT_SGML;
+        currentTopSectionStart_ = new LineChar(lineNumber_, characterNumber_ - sb_.toString().length()); 
         sections_.push(ParseSection.COMMENT_SGML);
-        sectionStarts_.push(new LineChar(lineNumber_, characterNumber_ - sb_.toString().length()));
+        sectionStarts_.push(currentTopSectionStart_);
+        sb_ = new StringBuilder();
       }
-    } else if ( !Character.isWhitespace(c)){
+    } else if ( !Whitespace.isWhitespace(c)){
       if (BackslashEscape.isBackslash(c)) {
         backslashEscape_ = new BackslashEscape();
       } else {
@@ -296,7 +300,7 @@ public class StyleSheetParser {
         case BLOCK:
           inPropertyValue_ = false;
           //ok the block just started, or a declaration and property just ended
-          if (Character.isWhitespace(c)) {
+          if (Whitespace.isWhitespace(c)) {
             return;
           } else if (c == ':') {
             if (currentIdentifier_ != null) {
@@ -308,8 +312,8 @@ public class StyleSheetParser {
             }
             
           } else if (c == '}') {
-            //back to top elements :)_
-            popStacks(sections_.size());
+            addCurrentBlockToStyleSheet();
+            resetParsingTopElements();
           } else {
             
             currentIdentifier_ = new CssIdentifier();
@@ -377,20 +381,38 @@ public class StyleSheetParser {
               styleSheet_.addAtRule(currentAtRule_, arm);
               currentAtRule_ = null;
             } else if (currentTopSection_ == ParseSection.SELECTOR_OR_BLOCK) {
-              Set<Entry<String,SpecifiedValue<?>>> entries = currentBlock_.entrySet();
-              for (Entry<String,SpecifiedValue<?>> e: entries) {
-                for (Selector cg: currentSelectors_) {
-                  styleSheet_.putValue(cg, e.getKey(), e.getValue());
-                }
-              }
+              addCurrentBlockToStyleSheet();
             }
             //done with selectors section
             popStacks(sections_.size());
+            resetParsingTopElements();
           } else {
             sb_.append(c);
           }
       }
     }
+  }
+
+  /**
+   * 
+   */
+  private void resetParsingTopElements() {
+    //back to top elements :)_
+    popStacks(sections_.size());
+    currentCombinator_ = null;
+    currentSelectors_ = new HashSet<Selector>();
+    currentTopSection_ = null;
+    currentTopSectionStart_ = null;
+  }
+
+  private void addCurrentBlockToStyleSheet() {
+    Set<Entry<String,SpecifiedValue<?>>> entries = currentBlock_.entrySet();
+    for (Entry<String,SpecifiedValue<?>> e: entries) {
+      for (Selector cg: currentSelectors_) {
+        styleSheet_.putValue(cg, e.getKey(), e.getValue());
+      }
+    }
+    currentBlock_ = new HashMap<String,SpecifiedValue<?>>();
   }
 
   private void processQuote(char c, char quoteType) {
@@ -446,8 +468,11 @@ public class StyleSheetParser {
   }
   
   private void processEndOfPropertyValue() {
-    String value = sb_.toString();
-    if (expectedCurrentBlock_ != null) {
+    String value = sb_.toString().trim();
+    sb_ = new StringBuilder();
+    if (expectedCurrentBlock_ == null) {
+      currentBlock_.put(currentPropertyName_, new SpecifiedValue<String>(CssType.ANY, value));
+    } else {
       CssType type = expectedCurrentBlock_.get(currentPropertyName_);
       if (type != null) {
         switch (type) {
@@ -469,9 +494,9 @@ public class StyleSheetParser {
       } else {
         currentBlock_.put(currentPropertyName_, new SpecifiedValue<String>(CssType.ANY, value));
       }
-    } else {
-      currentBlock_.put(currentPropertyName_, new SpecifiedValue<String>(CssType.ANY, value));
-    }
+    } 
+    popStacks(1);
+    inPropertyValue_ = false;
   }
 
   private void processIntegerValue(String value) {
@@ -615,7 +640,7 @@ public class StyleSheetParser {
           } else if (c == '\'') {
             inString_ = true;
             setStacks(ParseSection.SINGLE_QUOTE);
-          } else if (Character.isWhitespace(c)) {
+          } else if (Whitespace.isWhitespace(c)) {
             if (currentCombinator_ == null) {
               currentCombinator_ = Combinator.DIRECT_DESCENDANT;
             }
@@ -674,6 +699,8 @@ public class StyleSheetParser {
         if (commentEnd.equals(sb_.toString())) {
           //end of comment
           sb_ = new StringBuilder();
+          currentTopSection_ = null;
+          currentTopSectionStart_ = null;
           sections_.pop();
           sectionStarts_.pop();
         }
@@ -686,4 +713,5 @@ public class StyleSheetParser {
     } 
   }
 
+  
 }
