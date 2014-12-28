@@ -7,6 +7,5 @@
     </tns:stages>
     <lns:dependencies>
         <lns:library>gwt</lns:library>
-        <lns:project>tests4j.adligo.org</lns:project>
     </lns:dependencies>
  </tns:fabricate_project>
